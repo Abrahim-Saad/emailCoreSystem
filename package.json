@@ -1,0 +1,44 @@
+{
+  "name": "Email Client App",
+  "version": "1.0.0",
+  "description": "Email Client App Back-End",
+  "main": "configs/server.js",
+  "engines": {
+    "node": "16.x"
+  },
+  "scripts": {
+    "test": "jest",
+    "dev": "nodemon configs/server.js",
+    "prod": "nodemon configs/server.js",
+    "start": "nodemon configs/server.js"
+  },
+  "keywords": [],
+  "author": "Ibrahim Saad",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.13.1",
+    "axios": "^0.27.2",
+    "bcrypt": "^5.1.1",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.1",
+    "express-status-monitor": "^1.3.4",
+    "helmet": "^5.1.1",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-toobusy": "^0.6.3",
+    "nodemailer": "^6.7.8",
+    "nodemon": "^3.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "socket.io-client": "^4.7.2",
+    "superagent": "^8.0.0",
+    "supertest": "^6.2.4"
+  }
+}
