@@ -1,8 +1,10 @@
 const { elasticClient } = require("../configs/database")
 
-exports.createIndex = async (indexName) => {
+
+exports.createIndex = async (index, body) => {
     try {
-        const result = await elasticClient.indices.create({ index: indexName });
+        console.log("Index", index, "created"); // Debug log
+        const result = await elasticClient.indices.create({ index, body });
         return {
             success: true,
             code: 201,
@@ -19,9 +21,47 @@ exports.createIndex = async (indexName) => {
 };
 
 
-exports.checkIndex = async (indexName) => {
+exports.createBulkIndex = async (index, data) => {
     try {
-        const result = await elasticClient.indices.exists({ index: indexName });
+        let bulkBody = [];
+
+        data.forEach(item => {
+            bulkBody.push({
+                index: { _index: index, _id: item.id }
+            });
+            bulkBody.push(item);
+        });
+
+
+        const result = await elasticClient.bulk({ body: bulkBody });
+        let errorCount = 0;
+
+        result.items.forEach(item => {
+            if (item.index && item.index.error) {
+                console.log(++errorCount, item.index.error);
+            }
+        });
+        console.log(`Successfully indexed ${data.length - errorCount} out of ${data.length} items`);
+        return {
+            success: true,
+            code: 201,
+            result
+        };
+
+    } catch (err) {
+        console.log("Error in createBulkIndex =>", err.message)
+        return {
+            success: false,
+            code: 500,
+            error: err.message
+        };
+    }
+};
+
+
+exports.checkIndex = async (index) => {
+    try {
+        const result = await elasticClient.indices.exists({ index });
         return {
             success: true,
             code: 200,
@@ -38,15 +78,49 @@ exports.checkIndex = async (indexName) => {
 };
 
 
-exports.createDocument = async (indexName, id, docType, payload) => {
+exports.listIndicies = async () => {
     try {
-        const result = await elasticClient.create({
-            index: indexName,
-            type: docType,
-            id: id,
-            body: payload
-        });
+        // Get indices information using the cat API
+        const result = await elasticClient.cat.indices({ format: 'json' });
+        return {
+            success: true,
+            code: 200,
+            result
+        };
+    } catch (err) {
+        console.error('Error in getAllIndices =>', err.message);
+        return {
+            success: false,
+            code: 500,
+            error: err.message
+        };
+    }
+};
 
+
+exports.deleteIndex = async (index) => {
+    try {
+        const result = await elasticClient.indices.delete({ index });
+        console.log(`Index ${index} deleted successfully:`, result);
+        return {
+            success: true,
+            code: 200,
+            result
+        };
+    } catch (err) {
+        console.error(`Error deleting index ${indexName} =>`, err.message);
+        return {
+            success: false,
+            code: err.statusCode || 500,
+            error: err.message
+        };
+    }
+};
+
+
+exports.createDocument = async (index, body) => {
+    try {
+        const result = await elasticClient.index({ index, body });
         return {
             success: true,
             code: 201,
@@ -63,16 +137,9 @@ exports.createDocument = async (indexName, id, docType, payload) => {
 };
 
 
-exports.searchDocument = async (indexName, payload) => {
+exports.searchDocuments = async (index, body) => {
     try {
-        const result = await elasticClient.search({
-            index: indexName,
-            body: {
-                query: {
-                    match: payload
-                }
-            }
-        });
+        const result = await elasticClient.search({ index, body });
         return {
             success: true,
             code: 200,
@@ -89,14 +156,12 @@ exports.searchDocument = async (indexName, payload) => {
 };
 
 
-exports.updateDocument = async (indexName, id, docType, payload) => {
+exports.updateDocument = async (index, id, body) => {
     try {
         const result = await elasticClient.update({
-            index: indexName,
-            type: docType,
-            id: id,
+            index, id,
             body: {
-                doc: payload
+                doc: body
             }
         });
         return {
@@ -115,13 +180,9 @@ exports.updateDocument = async (indexName, id, docType, payload) => {
 };
 
 
-exports.deleteDocument = async (indexName, id, docType) => {
+exports.deleteDocument = async (index, id) => {
     try {
-        const result = await elasticClient.delete({
-            index: indexName,
-            type: docType,
-            id: id
-        });
+        const result = await elasticClient.delete({ index, id });
         return {
             success: true,
             code: 200,

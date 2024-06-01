@@ -10,7 +10,6 @@ const toobusy = require('node-toobusy');
 const cookieParser = require('cookie-parser');
 
 const handleCorsPolicy = require("../helpers/cors.helper");
-const connectToDatabase = require("./database").getConnectionInfo;
 const routes = require("../routes/index.route");
 
 app.use(cors());
@@ -71,12 +70,12 @@ app.use(require('express-status-monitor')({
 
 // middleware which blocks requests when server is too busy
 app.use(function (req, res, next) {
-  if (toobusy()) {
-    res.status(503);
-    res.send("Server is busy right now, sorry.");
-  } else {
-    next();
-  }
+  if (toobusy()) return res.status(503).json({
+    success: false,
+    code: 503,
+    error: "Server is busy right now, sorry."
+  });
+  else return next();
 });
 
 
@@ -86,8 +85,11 @@ app.use(function (err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  res.status(err.status || 500);
-  res.send({ "message": "404 Page Not Found..!" });
+  return res.status(500).json({
+    success: false,
+    code: 500,
+    error: "Internal Server Error."
+  });
 
 });
 
@@ -104,8 +106,7 @@ process.on('uncaughtException', (error) => {
   process.exit();
 });
 
-connectToDatabase();
-app.use(routes);
+app.use("/api/v1/", routes);
 
 
 

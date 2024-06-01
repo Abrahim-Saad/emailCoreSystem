@@ -1,5 +1,5 @@
 const { Client } = require('@elastic/elasticsearch');
-
+const { setupIndicies } = require("../models/index.model")
 const uriMap = {
     development: process.env.DEV_DB_CONNECTION_STRING,
 };
@@ -23,6 +23,7 @@ const getConnectionInfo = async () => {
     const connectionInfo = await elasticClient.info();
     if (!connectionInfo.cluster_name || !connectionInfo.cluster_uuid) return console.error("Elastic Cloud Connection Error")
     console.log("Connected to Elastic Cluster", connectionInfo.cluster_name);
+    setupIndicies()
 }
 
 

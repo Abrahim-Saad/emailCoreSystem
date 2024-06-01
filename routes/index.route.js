@@ -1,9 +1,14 @@
-let app = require("express").Router();
+const app = require("express").Router();
+const messageRoutes = require("./message.route")
 
+
+app.use("/messages", messageRoutes)
 
 app.get("/", (req, res) => {
-    return res.status(200).json({ success: true, message: 'Welcome', code: 200 })
+    return res.status(200).json({ success: true, result: 'Welcome', code: 200 })
 })
+
+
 
 
 app.all("*", (req, res) => {
