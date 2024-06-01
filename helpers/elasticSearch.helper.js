@@ -1,5 +1,5 @@
 const { elasticClient } = require("../configs/database")
-
+const queryHelper = require("./query.helper")
 
 exports.createIndex = async (index, body) => {
     try {
@@ -120,14 +120,37 @@ exports.deleteIndex = async (index) => {
 
 exports.createDocument = async (index, body) => {
     try {
-        const result = await elasticClient.index({ index, body });
+        let result;
+
+        if (Array.isArray(body)) {
+            // Bulk create documents
+            const bulkBody = body.flatMap(doc => [{ index: { _index: index } }, doc]);
+            result = await elasticClient.bulk({ body: bulkBody });
+
+            // Handle errors in bulk response
+            let errorCount = 0;
+            result.items.forEach(item => {
+                if (item.index && item.index.error) console.log(++errorCount, item.index.error);
+            });
+
+            return {
+                success: errorCount === 0,
+                code: errorCount === 0 ? 201 : 207, // 207 indicates multi-status
+                result
+            };
+
+        }
+
+        // Single document create
+        result = await elasticClient.index({ index, body });
         return {
             success: true,
             code: 201,
             result
         };
+
     } catch (err) {
-        console.log("Error in createDocument =>", err.message)
+        console.log("Error in createDocument =>", err.message);
         return {
             success: false,
             code: 500,
@@ -137,13 +160,56 @@ exports.createDocument = async (index, body) => {
 };
 
 
-exports.searchDocuments = async (index, body) => {
+exports.getDocument = async (index, key, value) => {
     try {
-        const result = await elasticClient.search({ index, body });
+        let result;
+
+        if (key === '_id') result = await elasticClient.get({ index, id: value });
+        else {
+
+            let body = {
+                query: {
+                    match: {
+                        [key]: value
+                    }
+                }
+            }
+            let match = await this.searchDocuments(index, body)
+            if (match.result.hits.total.value > 0) result = match.result.hits.hits[0];
+            else result = null;
+
+        }
+
         return {
             success: true,
             code: 200,
             result
+        };
+    } catch (err) {
+        console.error("Error in getDocument:", err.message);
+        return {
+            success: false,
+            code: 500,
+            error: err.message
+        };
+    }
+};
+
+
+exports.searchDocuments = async (index, query) => {
+    try {
+        let body = queryHelper.buildQueryObject(query)
+        let count = 0
+        let result = await elasticClient.search({ index, body });
+        if (result.hits) {
+            count = result.hits.total.value
+            result = result.hits.hits
+        }
+        return {
+            success: true,
+            code: 200,
+            result,
+            count
         };
     } catch (err) {
         console.log("Error in searchDocument =>", err.message)
@@ -156,12 +222,29 @@ exports.searchDocuments = async (index, body) => {
 };
 
 
-exports.updateDocument = async (index, id, body) => {
+exports.updateDocument = async (index, queryParams, body) => {
     try {
-        const result = await elasticClient.update({
-            index, id,
+        if (typeof queryParams === 'string' || (typeof queryParams === 'object' && queryParams._id)) {
+            // Update by ID
+            const id = typeof queryParams === 'string' ? queryParams : queryParams._id;
+            const result = await elasticClient.update({ index, id, body: { doc: body } });
+            return {
+                success: true,
+                code: 200,
+                result
+            };
+        }
+
+        // Update by Query
+        const queryObject = queryHelper.buildQueryObject(queryParams);
+        const result = await elasticClient.updateByQuery({
+            index,
             body: {
-                doc: body
+                query: queryObject.query,
+                script: {
+                    source: Object.keys(body).map(key => `ctx._source.${key} = params.${key}`).join('; '),
+                    params: body
+                }
             }
         });
         return {
@@ -169,8 +252,9 @@ exports.updateDocument = async (index, id, body) => {
             code: 200,
             result
         };
+
     } catch (err) {
-        console.log("Error in updateDocument =>", err.message)
+        console.log("Error in updateDocument =>", err.message);
         return {
             success: false,
             code: 500,
@@ -180,16 +264,58 @@ exports.updateDocument = async (index, id, body) => {
 };
 
 
-exports.deleteDocument = async (index, id) => {
+exports.deleteDocument = async (index, queryParams) => {
     try {
-        const result = await elasticClient.delete({ index, id });
-        return {
-            success: true,
-            code: 200,
-            result
-        };
+        let result;
+
+        if (Array.isArray(queryParams)) {
+            // Bulk delete documents by IDs
+            const bulkBody = queryParams.map(id => ({ delete: { _index: index, _id: id } }));
+            result = await elasticClient.bulk({ body: bulkBody });
+
+            // Handle errors in bulk response
+            let errorCount = 0;
+            result.items.forEach(item => {
+                if (item.delete && item.delete.error) console.log(++errorCount, item.delete.error);
+            });
+
+            return {
+                success: errorCount === 0,
+                code: errorCount === 0 ? 200 : 207, // 207 indicates multi-status
+                result
+            };
+
+        } else if (typeof queryParams === 'object' && !queryParams._id) {
+            // Delete documents by query
+            const queryObject = queryHelper.buildQueryObject(queryParams);
+            result = await elasticClient.deleteByQuery({
+                index,
+                body: {
+                    query: queryObject
+                }
+            });
+
+            return {
+                success: true,
+                code: 200,
+                result
+            };
+
+        } else if (typeof queryParams === 'string' || (typeof queryParams === 'object' && queryParams._id)) {
+            // Single document delete by ID
+            const id = typeof queryParams === 'string' ? queryParams : queryParams._id;
+            result = await elasticClient.delete({ index, id });
+            return {
+                success: true,
+                code: 200,
+                result
+            };
+        }
+
+        else throw new Error('Invalid queryParams for deleting documents');
+
     } catch (err) {
-        console.log("Error in deleteDocument =>", err.message)
+        console.log("Error in deleteDocument =>", err.message);
         return {
             success: false,
             code: 500,

@@ -1,13 +1,10 @@
 const app = require("express").Router();
 const messageRoutes = require("./message.route")
+const mailboxRoutes = require("./mailbox.route")
 
 
 app.use("/messages", messageRoutes)
-
-app.get("/", (req, res) => {
-    return res.status(200).json({ success: true, result: 'Welcome', code: 200 })
-})
-
+app.use("/mailboxes", mailboxRoutes)
 
 
 

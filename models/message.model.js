@@ -10,8 +10,7 @@ const messageSchema = {
             subject: { type: 'text' },
             body: { type: 'text' },
             sent_date: { type: 'date' },
-            received_date: { type: 'date' },
-            message_id: { type: 'keyword' }
+            received_date: { type: 'date' }
         }
     }
 }

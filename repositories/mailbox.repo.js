@@ -1,5 +1,5 @@
 const elasticHelper = require("../helpers/elasticSearch.helper")
-const indexName = "messages"
+const indexName = "mailbox"
 
 
 exports.create = async (body) => {
@@ -7,7 +7,7 @@ exports.create = async (body) => {
         const result = await elasticHelper.createDocument(indexName, body);
         return result;
     } catch (err) {
-        console.log("Error in create message =>", err.message)
+        console.log("Error in create mailbox =>", err.message)
         return {
             success: false,
             code: 500,
@@ -22,7 +22,7 @@ exports.get = async (key, value) => {
         const result = await elasticHelper.getDocument(indexName, key || "_id", value);
         return result;
     } catch (err) {
-        console.log("Error in get message =>", err.message)
+        console.log("Error in get mailbox =>", err.message)
         return {
             success: false,
             code: 500,
@@ -37,7 +37,7 @@ exports.list = async (query) => {
         const result = await elasticHelper.searchDocuments(indexName, query);
         return result;
     } catch (err) {
-        console.log("Error in list message =>", err.message)
+        console.log("Error in list mailbox =>", err.message)
         return {
             success: false,
             code: 500,
@@ -52,7 +52,7 @@ exports.update = async (query, body) => {
         const result = await elasticHelper.updateDocument(indexName, query, body);
         return result;
     } catch (err) {
-        console.log("Error in create message =>", err.message)
+        console.log("Error in create mailbox =>", err.message)
         return {
             success: false,
             code: 500,
@@ -67,7 +67,7 @@ exports.delete = async (query) => {
         const result = await elasticHelper.deleteDocument(indexName, query);
         return result;
     } catch (err) {
-        console.log("Error in create message =>", err.message)
+        console.log("Error in create mailbox =>", err.message)
         return {
             success: false,
             code: 500,
