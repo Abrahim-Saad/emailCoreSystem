@@ -98,20 +98,25 @@ exports.listIndicies = async () => {
 };
 
 
-exports.deleteIndex = async (index) => {
+exports.searchDocuments = async (index, query = {}) => {
     try {
-        const result = await elasticClient.indices.delete({ index });
-        console.log(`Index ${index} deleted successfully:`, result);
+        let body = queryHelper.buildQueryObject(query);
+        const result = await elasticClient.search({ index, body });
+
+        const count = result.hits.total.value;
+        const hits = result.hits.hits;
+
         return {
             success: true,
             code: 200,
-            result
+            result: hits,
+            count
         };
     } catch (err) {
-        console.error(`Error deleting index ${indexName} =>`, err.message);
+        console.log("Error in searchDocuments =>", err.message);
         return {
             success: false,
-            code: err.statusCode || 500,
+            code: 500,
             error: err.message
         };
     }
@@ -174,12 +179,20 @@ exports.getDocument = async (index, key, value) => {
                     }
                 }
             }
+            console.log(key, value, body)
             let match = await this.searchDocuments(index, body)
-            if (match.result.hits.total.value > 0) result = match.result.hits.hits[0];
+            console.log("match", match)
+            if (match.count > 0) result = match.result[0];
             else result = null;
 
         }
 
+        console.log("get document result", result)
+        if (!result) return {
+            success: false,
+            code: 404,
+            error: "Not Found."
+        }
         return {
             success: true,
             code: 200,

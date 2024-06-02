@@ -4,6 +4,7 @@ const elasticHelper = require("../helpers/elasticSearch.helper")
 const mailboxSchema = {
     mappings: {
         properties: {
+            userId: { type: 'keyword' },
             user_email: { type: 'keyword' },
             mailbox_settings: { type: 'object' },
             folders: {

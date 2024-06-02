@@ -26,9 +26,6 @@ exports.getEmailMessage = async (req, res) => {
 exports.listEmailMessages = async (req, res) => {
     try {
         const queryParams = {
-            match: {
-                [req.query.key]: req.query.value
-            },
             size: req.query.size || 10,
             from: req.query.page || 0
         };

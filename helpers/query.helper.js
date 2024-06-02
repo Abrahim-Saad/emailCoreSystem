@@ -1,6 +1,11 @@
 exports.buildQueryObject = (queryParams) => {
-    const { match, multi_match, term, terms, range, exists, prefix, wildcard, regexp,
-        sort, size, from, aggs, must_not, should, filter, suggest } = queryParams;
+    const {
+        match, multi_match, term, terms, range, exists, prefix, wildcard, regexp,
+        sort, size, from, aggs, must_not, should, filter, suggest
+    } = queryParams;
+
+    // Check if no query parameters are provided
+    if (Object.keys(queryParams).length === 0) return { query: { match_all: {} } };
 
     let query = {
         bool: {
@@ -20,8 +25,8 @@ exports.buildQueryObject = (queryParams) => {
 
     // Handling 'multi_match' queries
     if (multi_match) {
-        for (const { query, fields } of multi_match) {
-            query.bool.must.push({ multi_match: { query, fields } });
+        for (const { query: mq, fields } of multi_match) {
+            query.bool.must.push({ multi_match: { query: mq, fields } });
         }
     }
 

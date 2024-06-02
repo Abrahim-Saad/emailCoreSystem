@@ -4,6 +4,7 @@ const elasticHelper = require("../helpers/elasticSearch.helper")
 const messageSchema = {
     mappings: {
         properties: {
+            userId: { type: 'keyword' },
             user_email: { type: 'keyword' },
             sender: { type: 'keyword' },
             recipient: { type: 'keyword' },
