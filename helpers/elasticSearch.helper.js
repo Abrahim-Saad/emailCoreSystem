@@ -98,22 +98,17 @@ exports.listIndicies = async () => {
 };
 
 
-exports.searchDocuments = async (index, query = {}) => {
+exports.deleteIndex = async (index) => {
     try {
-        let body = queryHelper.buildQueryObject(query);
-        const result = await elasticClient.search({ index, body });
-
-        const count = result.hits.total.value;
-        const hits = result.hits.hits;
-
+        const result = await elasticClient.indices.delete({ index });
         return {
             success: true,
             code: 200,
-            result: hits,
-            count
+            message: `Index ${index} deleted successfully`,
+            result
         };
     } catch (err) {
-        console.log("Error in searchDocuments =>", err.message);
+        console.log("Error in deleteIndex =>", err.message);
         return {
             success: false,
             code: 500,
@@ -178,10 +173,8 @@ exports.getDocument = async (index, key, value) => {
                         [key]: value
                     }
                 }
-            }
-            console.log(key, value, body)
+            };
             let match = await this.searchDocuments(index, body)
-            console.log("match", match)
             if (match.count > 0) result = match.result[0];
             else result = null;
 
@@ -209,23 +202,25 @@ exports.getDocument = async (index, key, value) => {
 };
 
 
-exports.searchDocuments = async (index, query) => {
+exports.searchDocuments = async (index, query = {}) => {
     try {
-        let body = queryHelper.buildQueryObject(query)
-        let count = 0
-        let result = await elasticClient.search({ index, body });
-        if (result.hits) {
-            count = result.hits.total.value
-            result = result.hits.hits
-        }
+        // let body = queryHelper.buildQueryObject(query);
+        let body = query;
+
+        const result = await elasticClient.search({ index, body });
+        // console.log("searchDocuments result", result)
+
+        const count = result.hits.total.value;
+        const hits = result.hits.hits;
+
         return {
             success: true,
             code: 200,
-            result,
+            result: hits,
             count
         };
     } catch (err) {
-        console.log("Error in searchDocument =>", err.message)
+        console.log("Error in searchDocuments =>", err.message);
         return {
             success: false,
             code: 500,

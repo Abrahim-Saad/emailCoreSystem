@@ -6,7 +6,6 @@ const { sendResponse } = require("../helpers/response.helper")
 exports.createUser = async (req, res) => {
     try {
         let existant = await userRepo.get("user_email", req.body.user_email)
-        console.log(existant)
         if (existant.success) {
             let errorData = { success: false, code: 409, error: "Email Already Exists!" };
             return sendResponse(req, res, errorData, "error", null);

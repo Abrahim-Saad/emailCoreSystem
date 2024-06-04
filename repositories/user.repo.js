@@ -19,7 +19,6 @@ exports.create = async (body) => {
 
 exports.get = async (key, value) => {
     try {
-        console.log(key, value)
         const result = await elasticHelper.getDocument(indexName, key || "_id", value);
         return result;
     } catch (err) {
